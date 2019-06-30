@@ -1,0 +1,5 @@
+c:\users\admin\documents\visual studio 2015\Projects\Client\bin\Debug\Client.exe.config
+c:\users\admin\documents\visual studio 2015\Projects\Client\bin\Debug\Client.exe
+c:\users\admin\documents\visual studio 2015\Projects\Client\bin\Debug\Client.pdb
+c:\users\admin\documents\visual studio 2015\Projects\Client\obj\Debug\Client.exe
+c:\users\admin\documents\visual studio 2015\Projects\Client\obj\Debug\Client.pdb
