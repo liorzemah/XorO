@@ -17,6 +17,8 @@ namespace Server
             SelectPosition = 4,
             SendBoard = 5,
             PositionAlreadyExit = 6,
+            YouLose = 7,
+            YouWin = 8,
         }
         static Dictionary<string, string> userDictionary = new Dictionary<string, string>();
         static uint countOfPlayers = 0;
@@ -25,6 +27,7 @@ namespace Server
         static Board board = new Board();
         static char playerTurn = 'X';
         static List<int> availablePositions = new List<int>(){ 1,2,3,4,5,6,7,8,9 };
+        static char playerWin = 'N';
 
         static void Main(string[] args)
         {
@@ -43,6 +46,8 @@ namespace Server
             msgsDictionary.Add(StateMsgs.SelectPosition, "Select position (1-9): ");
             //msgsDictionary.Add(StateMsgs.SendBoard, "");
             msgsDictionary.Add(StateMsgs.PositionAlreadyExit, "Position already catch");
+            msgsDictionary.Add(StateMsgs.YouLose, "You lose!");
+            msgsDictionary.Add(StateMsgs.YouWin, "You win!");
 
             try
             {
@@ -185,23 +190,39 @@ namespace Server
 
                     if (player == 'X')
                     {
+                        if (playerWin == 'X')
+                        {
+                            Console.WriteLine("X: win");
+                            SendMessage(socket, msgsDictionary[StateMsgs.YouWin]);
+                            return;
+                        }
+                        else if (playerWin == 'O')
+                        {
+                            Console.WriteLine("X : lose");
+                            SendMessage(socket, msgsDictionary[StateMsgs.YouLose]);
+                            return;
+                        }
                         if (playerTurn == 'X')
                         {
                             PlayTurn(socket, binDataIn, 'X');
                             playerTurn = 'O';
                         }
-                        else // playerTurn == 'O'
-                        {
-
-                        }
                     }
                     else // player == 'O'
                     {
-                        if (playerTurn == 'X')
+                        if (playerWin == 'O')
                         {
-
+                            Console.WriteLine("O: win");
+                            SendMessage(socket, msgsDictionary[StateMsgs.YouWin]);
+                            return;
                         }
-                        else // playerTurn == 'O'
+                        else if (playerWin == 'X')
+                        {
+                            Console.WriteLine("O : lose");
+                            SendMessage(socket, msgsDictionary[StateMsgs.YouLose]);
+                            return;
+                        }
+                        if (playerTurn == 'O')
                         {
                             PlayTurn(socket, binDataIn, 'O');
                             playerTurn = 'X';
@@ -213,10 +234,11 @@ namespace Server
             socket.Close();
         }
 
+        // Return true if player win the game;
         private static void PlayTurn(Socket socket, byte[] binDataIn, char player)
         {
             bool turnEnd = false;
-
+            int pos = 0;
             Console.WriteLine(board.ToString());
             SendMessage(socket, board.ToString());
 
@@ -228,7 +250,7 @@ namespace Server
                 if (size == 0) break;
                 ASCIIEncoding asciiEnc = new ASCIIEncoding();
                 string recvPosition = asciiEnc.GetString(binDataIn, 0, size);
-                int pos = int.Parse(recvPosition);
+                pos = int.Parse(recvPosition);
 
                 if (availablePositions.Contains(pos))
                 {
@@ -242,6 +264,73 @@ namespace Server
                     SendMessage(socket, msgsDictionary[StateMsgs.PositionAlreadyExit]);
                 }
             } while (!turnEnd);
+
+            if(pos != 0 && checkWinner(pos, player))
+            {
+                playerWin = player;
+                Console.WriteLine(playerWin + ": win");
+                SendMessage(socket, msgsDictionary[StateMsgs.YouWin]);
+            }
+        }
+
+        private static bool checkWinner(int lastPos, char player)
+        {
+            //check end conditions
+            const int boardSize = 3;
+            char[,] boardTemp = board.GetBoard();
+            int row = (lastPos -1) / boardSize;
+            int col = (lastPos -1) % boardSize;
+            //check col
+            for (int i = 0; i < boardSize; i++)
+            {
+                if (boardTemp[row,i] != player)
+                    break;
+                if (i == boardSize - 1)
+                {
+                    return true;
+                }
+            }
+
+            //check row
+            for (int i = 0; i < boardSize; i++)
+            {
+                if (boardTemp[i, col] != player)
+                    break;
+                if (i == boardSize - 1)
+                {
+                    return true;
+                }
+            }
+
+            //check diag
+            if (lastPos / boardSize == (lastPos % boardSize - 1))
+            {
+                //we're on a diagonal
+                for (int i = 0; i < boardSize; i++)
+                {
+                    if (boardTemp[i,i] != player)
+                        break;
+                    if (i == boardSize - 1)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            //check anti diag (thanks rampion)
+            if (row + col == boardSize - 1)
+            {
+                for (int i = 0; i < boardSize; i++)
+                {
+                    if (boardTemp[i,(boardSize - 1) - i] != player)
+                        break;
+                    if (i == boardSize - 1)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
     }
 }

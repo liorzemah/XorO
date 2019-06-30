@@ -17,6 +17,8 @@ namespace Client
             SelectPosition = 4,
             SendBoard = 5,
             PositionAlreadyExit = 6,
+            YouLose = 7,
+            YouWin = 8,
         }
 
         static Dictionary<string, StateMsgs> msgsDictionary = new Dictionary<string, StateMsgs>();
@@ -29,6 +31,8 @@ namespace Client
             msgsDictionary.Add("Select position (1-9): ", StateMsgs.SelectPosition);
             //msgsDictionary.Add(StateMsgs.SendBoard, "");
             msgsDictionary.Add("Position already catch", StateMsgs.PositionAlreadyExit);
+            msgsDictionary.Add("You lose!", StateMsgs.YouLose);
+            msgsDictionary.Add("You win!", StateMsgs.YouWin);
 
             Socket socket = new Socket(AddressFamily.InterNetwork,
                              SocketType.Stream, ProtocolType.Tcp);
@@ -128,12 +132,21 @@ namespace Client
                 // Start Game:
 
                 msg = RecvMsg(socket, asciiEnc);
-                Console.WriteLine(msg);  // Print board or Get PositionAlreadyExit message
+                Console.WriteLine(msg);  // Print board or Get PositionAlreadyExit message or win/lose
 
-                if (!msgsDictionary.ContainsKey(msg) || msgsDictionary[msg] != StateMsgs.PositionAlreadyExit)
+                if (!msgsDictionary.ContainsKey(msg)) // It's board;
                 {
                     msg = RecvMsg(socket, asciiEnc); // Select position message
+
                 }
+
+                if (msgsDictionary[msg] == StateMsgs.YouWin || msgsDictionary[msg] == StateMsgs.YouLose)
+                {
+                    Console.WriteLine("End Game");
+                    socket.Close();
+                    return;
+                }
+
                 bool getPos = false;
                 do
                 {

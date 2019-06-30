@@ -25,6 +25,11 @@ namespace Server
             return output;
         }
 
+        public char[,] GetBoard()
+        {
+            return board;
+        }
+
         public void Update(int pos, char player)
         {
             if (pos < 4)
